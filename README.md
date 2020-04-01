@@ -1,2 +1,2 @@
 # ayasha
-domotic server homade
+domotic server homemade
