@@ -1,12 +1,4 @@
 table! {
-    RawFrame (frame_id) {
-        frame_id -> Integer,
-        raw_data -> Text,
-        dt_occurs -> Timestamp,
-    }
-}
-
-table! {
     event (event_id) {
         event_id -> Integer,
         event_type -> Text,
@@ -16,6 +8,14 @@ table! {
         event_value_definition -> Nullable<Text>,
         dt_occurs -> Timestamp,
         read_flag -> Bool,
+    }
+}
+
+table! {
+    raw_frame_info (frame_id) {
+        frame_id -> Integer,
+        raw_data -> Text,
+        dt_occurs -> Timestamp,
     }
 }
 
@@ -47,8 +47,8 @@ table! {
 }
 
 allow_tables_to_appear_in_same_query!(
-    RawFrame,
     event,
+    raw_frame_info,
     rules_result,
     sensor,
     sensor_state,

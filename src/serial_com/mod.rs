@@ -1,31 +1,32 @@
 extern crate serial;
 
-use std::env;
 use std::io;
 use std::time::Duration;
 
-use std::io::prelude::*;
-use std::io::{Write, Result};
 use serial::prelude::*;
 
-
 pub mod models;
-use models::*;
+pub mod repository;
 
-pub fn start_listen() {
+use crate::serial_com::models::*;
+use crate::serial_com::repository::*;
+use crate::connection::*;
+
+
+pub fn start_listen(on_frame_receive : Box<dyn Fn(Frame)>) {
 
     loop {
-        let result = listen();
+        let result = listen(&on_frame_receive);
         match result {
-            Ok(x) => (),
+            Ok(_x) => (),
             Err(e) => debug!("serial com error {}", e )
         }
     }
 }
 
-fn listen() -> io::Result<()> {
-    let port = &mut serial::open("/dev/ttyACM0").unwrap(); //SERIAL_PORT
-    port.reconfigure(&|settings| {
+pub fn listen(on_data_receive: &dyn Fn(Frame)) -> io::Result<()> {
+    let port = &mut serial::open("/dev/ttyACM0").unwrap(); //SERIAL_PORT 
+    port.reconfigure(&|settings| { 
     settings.set_baud_rate(serial::Baud57600)?;
     settings.set_char_size(serial::Bits8);
     settings.set_parity(serial::ParityNone);
@@ -44,6 +45,11 @@ fn listen() -> io::Result<()> {
 
     loop{
         let frame = read_line(port)?;
+
+        let get_repo = &||FrameProvider::new(&establish); 
+        let irf = frame.to_raw_frame_info();
+        (get_repo().insert_frame)(&irf).expect("raw frame insertion fail");
+
         let frame_result = match frame.is_debug() {
                                 true =>{
                                     let debug_frame = DebugFrame::from_raw(&frame);
@@ -54,10 +60,8 @@ fn listen() -> io::Result<()> {
                                     Frame::RfLinkFrame(rf_frame)
                                 }
                             };
+        on_data_receive(frame_result); //call extern function
     }
-
-
-    Ok(())
 }
 
 

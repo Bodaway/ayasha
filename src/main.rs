@@ -20,6 +20,9 @@ mod schema;
 mod sensor;
 mod traitement_recurent;
 mod serial_com;
+mod lacrosse_v3_protocol;
+
+use serial_com::models::*;
 
 
 embed_migrations!("./migrations");
@@ -49,7 +52,7 @@ fn main() {
 
     use serial_com::*;
     thread::spawn(move || {
-        start_listen();
+        start_listen(Box::new(frame_received));
     });
 
     
@@ -60,6 +63,16 @@ fn main() {
         .launch();
 }
 
+fn frame_received(frame: serial_com::models::Frame) {
+match frame {
+    Frame::DebugFrame(df) => {
+        let Rdata = lacrosse_v3_protocol::decrypt(df.pulses.as_ref()).unwrap();
+        println!("id:{}, temperature:{}, humidity:{}",Rdata.sensor_id,Rdata.temperature.to_string(),Rdata.humidity.to_string());
+    },
+    Frame::RfLinkFrame(rf) => {}
+}
+
+}
 
 // ROCKET 
 

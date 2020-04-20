@@ -1,3 +1,11 @@
+use crate::schema::*;
+
+#[derive(Insertable)]
+#[table_name = "raw_frame_info"]
+pub struct InsertableRawFrameInfo {
+    raw_data : String,
+    dt_occurs: chrono::NaiveDateTime
+}
 
 pub struct RawFrame{
     data : String,
@@ -5,13 +13,13 @@ pub struct RawFrame{
 }
 
 pub struct RfLinkFrame{
-    data : String,
+    data : String ,
     timestamp : chrono::NaiveDateTime   
 }
 
 pub struct DebugFrame {
     pulses_number : i32,
-    pulses : String,
+    pub pulses : String,
     timestamp : chrono::NaiveDateTime   
 }
 
@@ -23,7 +31,7 @@ pub enum Frame{
 impl DebugFrame {
     pub fn from_raw(raw : &RawFrame) -> DebugFrame {
         let raw_vec = raw.to_vec();
-        let pulses_number = (&raw_vec[3][6..]).parse::<i32>().expect("fuck") ;
+        let pulses_number = (&raw_vec[3][7..]).parse::<i32>().expect("fuck") ;
         let pulses_str = (&raw_vec[4][13..]).to_string();
 
         DebugFrame{pulses_number : pulses_number, pulses: pulses_str,timestamp : raw.timestamp}
@@ -44,11 +52,16 @@ impl RawFrame{
     }
 
     pub fn is_debug(&self) -> bool {
-        self.to_vec()[2] == "DEBUG"
+        let vec = self.to_vec();       
+        vec.len() > 2 && vec[2] == "DEBUG"
     }
 
     pub fn from_utf8(data : Vec<u8>) -> Result<RawFrame,Box<dyn Error>> {
         Ok(RawFrame::from_string(String::from_utf8(data)?))
+    }
+    
+    pub fn to_raw_frame_info(&self) -> InsertableRawFrameInfo {
+        InsertableRawFrameInfo{raw_data: self.data.clone(),dt_occurs:self.timestamp}
     }
 }
 
