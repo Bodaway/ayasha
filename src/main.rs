@@ -66,10 +66,12 @@ fn main() {
 fn frame_received(frame: serial_com::models::Frame) {
 match frame {
     Frame::DebugFrame(df) => {
-        let Rdata = lacrosse_v3_protocol::decrypt(df.pulses.as_ref()).unwrap();
-        println!("id:{}, temperature:{}, humidity:{}",Rdata.sensor_id,Rdata.temperature.to_string(),Rdata.humidity.to_string());
+        let rdata = lacrosse_v3_protocol::decrypt(df.pulses.as_ref()).unwrap();
+        println!("id:{}, temperature:{}, humidity:{}",rdata.sensor_id,rdata.temperature.to_string(),rdata.humidity.to_string());
+        use sensor::models::*;
+        SensorState::new(rdata.sensor_id as SensorId ,rdata.temperature);
     },
-    Frame::RfLinkFrame(rf) => {}
+    Frame::RfLinkFrame(_rf) => {}
 }
 
 }

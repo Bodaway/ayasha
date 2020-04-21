@@ -59,7 +59,7 @@ pub struct SensorState {
 }
 
 impl SensorState {
-    fn new(id_of_sensor : SensorId, value : f32) -> SensorState {
+    pub fn new(id_of_sensor : SensorId, value : f32) -> SensorState {
         SensorState{sensor_id : id_of_sensor, sensor_value : value, dt_update : chrono::Local::now().naive_local() }
     }
 }

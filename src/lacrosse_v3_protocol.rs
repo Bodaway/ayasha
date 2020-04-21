@@ -1,7 +1,7 @@
 use std::error::Error;
 
 pub struct LaCrosseData {
-    pub sensor_id : String,
+    pub sensor_id : i32,
     pub temperature : f32,
     pub humidity : i32 
 }
@@ -20,7 +20,7 @@ pub fn decrypt(raw_data : &str) -> Result<LaCrosseData,Box<dyn Error>> {
 
     let w_frame = binary_frames[0];
 
-    let id_bin = &w_frame[..8];
+    let id_bin = isize::from_str_radix( &w_frame[..8],2)? as i32;
     let temp_bin = &w_frame[12..24];
     let temp_val:f32 = (isize::from_str_radix(reverse_binary(temp_bin).as_str(), 2).unwrap() as f32) / 10.0 - 50.0 ;
     let hum_bin = &w_frame[25..32];
@@ -28,7 +28,7 @@ pub fn decrypt(raw_data : &str) -> Result<LaCrosseData,Box<dyn Error>> {
 
 
 
-   Ok(LaCrosseData {sensor_id:id_bin.to_string(),temperature:temp_val,humidity:hum_val})
+   Ok(LaCrosseData {sensor_id:id_bin,temperature:temp_val,humidity:hum_val})
 
 }
 

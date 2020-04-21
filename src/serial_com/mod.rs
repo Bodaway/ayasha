@@ -25,7 +25,7 @@ pub fn start_listen(on_frame_receive : Box<dyn Fn(Frame)>) {
 }
 
 pub fn listen(on_data_receive: &dyn Fn(Frame)) -> io::Result<()> {
-    let port = &mut serial::open("/dev/ttyACM0").unwrap(); //SERIAL_PORT 
+    let port = &mut serial::open("/dev/ttyACM0")?; //SERIAL_PORT 
     port.reconfigure(&|settings| { 
     settings.set_baud_rate(serial::Baud57600)?;
     settings.set_char_size(serial::Bits8);
@@ -71,15 +71,7 @@ fn read_line<T: SerialPort>(port : &mut T) -> io::Result<RawFrame> {
     let mut buf = [0 as u8];
     while buf[0] != 10 {
         port.read(&mut buf)?;
-
-        match buf[0] {
-            10 => {
-                let s = String::from_utf8(input.clone()).expect("Found invalid UTF-8");
-            }
-            c => {
-                input.push(c);
-            }
-        }
+        input.push(buf[0]);
     }
     let result = RawFrame::from_utf8(input).expect("Found invalid UTF-8");
     Ok(result)
