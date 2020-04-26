@@ -20,3 +20,4 @@ log = "*"
 syslog = "*"
 serial = "*"
 azure_notificationhub_sender = { git = "https://github.com/Bodaway/azure_notificationhub_sender.git"}
+snafu = "*"

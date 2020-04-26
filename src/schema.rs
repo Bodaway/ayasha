@@ -12,6 +12,13 @@ table! {
 }
 
 table! {
+    location (id) {
+        id -> Integer,
+        name -> Text,
+    }
+}
+
+table! {
     raw_frame_info (frame_id) {
         frame_id -> Integer,
         raw_data -> Text,
@@ -29,10 +36,10 @@ table! {
 }
 
 table! {
-    sensor (sensor_id) {
-        sensor_id -> Integer,
+    sensor (id) {
+        id -> Integer,
         name -> Text,
-        location -> Text,
+        location_id -> Nullable<Integer>,
         sensor_type -> Text,
         unit -> Text,
     }
@@ -48,6 +55,7 @@ table! {
 
 allow_tables_to_appear_in_same_query!(
     event,
+    location,
     raw_frame_info,
     rules_result,
     sensor,

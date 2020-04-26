@@ -59,22 +59,27 @@ fn main() {
     info!("hello world");
 
     rocket::ignite()
-        .mount("/", routes![index, get_sensors_values,covid19_exposed_today,get_all_event,get_no_read_event,set_event_read])
+        .mount("/", routes![index, get_sensors_values,covid19_exposed_today,get_all_event,get_no_read_event,set_event_read, create_location])
         .launch();
 }
 
 fn frame_received(frame: serial_com::models::Frame) {
 match frame {
     Frame::DebugFrame(df) => {
-        let rdata = lacrosse_v3_protocol::decrypt(df.pulses.as_ref()).unwrap();
-        println!("id:{}, temperature:{}, humidity:{}",rdata.sensor_id,rdata.temperature.to_string(),rdata.humidity.to_string());
-        use sensor::models::*;
-        SensorState::new(rdata.sensor_id as SensorId ,rdata.temperature);
-    },
-    Frame::RfLinkFrame(_rf) => {}
-}
+        let rdata = lacrosse_v3_protocol::decrypt(df.pulses.as_ref());
+        match rdata {
 
-}
+            Ok(data) => {
+                println!("id:{}, temperature:{}, humidity:{}",data.sensor_id,data.temperature.to_string(),data.humidity.to_string());
+                use sensor::models::*;
+                let state = SensorState::new(data.sensor_id as SensorId ,data.temperature);
+                let repo = &||sensor::repository::SensorProvider::new(&connection::establish);
+                (repo().insert_sensor_state)(&state).expect("sersor state insertion fail");
+        }
+            }},
+    Frame::RfLinkFrame(_rf) => ()
+
+}}
 
 // ROCKET 
 
@@ -96,6 +101,15 @@ fn set_event_read(id : &RawStr) {
     (get_repo().set_event_to_read)(&id_int).expect("set_event_read update fail");
 }
 
+#[put("/createLocation/<name>")]
+fn create_location(name : &RawStr) {
+   use crate::sensor::models::*;
+   use crate::sensor::repository::*;
+
+   let get_repo = &||SensorProvider::new(&connection::establish);
+   let iloca = InsertableLocation::new(name.as_str());
+   (get_repo().insert_location)(iloca).expect("location insertion fail");
+}
 
 #[get("/covid19ExposedToday")]
 fn covid19_exposed_today() {

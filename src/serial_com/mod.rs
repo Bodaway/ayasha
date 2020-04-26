@@ -2,6 +2,7 @@ extern crate serial;
 
 use std::io;
 use std::time::Duration;
+use std::thread;
 
 use serial::prelude::*;
 
@@ -12,14 +13,13 @@ use crate::serial_com::models::*;
 use crate::serial_com::repository::*;
 use crate::connection::*;
 
-
 pub fn start_listen(on_frame_receive : Box<dyn Fn(Frame)>) {
 
     loop {
         let result = listen(&on_frame_receive);
         match result {
             Ok(_x) => (),
-            Err(e) => debug!("serial com error {}", e )
+            Err(e) => thread::sleep(Duration::from_secs(9600))// debug!("serial com error {}", e )
         }
     }
 }
