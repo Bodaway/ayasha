@@ -1,12 +1,4 @@
 table! {
-    RawFrame (frame_id) {
-        frame_id -> Integer,
-        raw_data -> Text,
-        dt_occurs -> Timestamp,
-    }
-}
-
-table! {
     event (event_id) {
         event_id -> Integer,
         event_type -> Text,
@@ -20,6 +12,21 @@ table! {
 }
 
 table! {
+    location (id) {
+        id -> Integer,
+        name -> Text,
+    }
+}
+
+table! {
+    raw_frame_info (frame_id) {
+        frame_id -> Integer,
+        raw_data -> Text,
+        dt_occurs -> Timestamp,
+    }
+}
+
+table! {
     rules_result (rule_name, dt_execution) {
         rule_name -> Text,
         dt_execution -> Timestamp,
@@ -29,10 +36,10 @@ table! {
 }
 
 table! {
-    sensor (sensor_id) {
-        sensor_id -> Integer,
+    sensor (id) {
+        id -> Integer,
         name -> Text,
-        location -> Text,
+        location_id -> Nullable<Integer>,
         sensor_type -> Text,
         unit -> Text,
     }
@@ -47,8 +54,9 @@ table! {
 }
 
 allow_tables_to_appear_in_same_query!(
-    RawFrame,
     event,
+    location,
+    raw_frame_info,
     rules_result,
     sensor,
     sensor_state,

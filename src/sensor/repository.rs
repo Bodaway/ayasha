@@ -10,6 +10,7 @@ pub struct SensorProvider {
     pub get_all_sensor_state    : Box<dyn Fn() -> QueryResult<Vec<SensorState>>>,
     pub get_all_sensor          : Box<dyn Fn() -> QueryResult<Vec<Sensor>>>,
     pub insert_sensor           : Box<dyn Fn(InsertableSensor) -> QueryResult<Sensor>>,
+    pub insert_location         : Box<dyn Fn(InsertableLocation) -> QueryResult<Location>>,
     pub insert_sensor_state     : Box<dyn Fn(&SensorState) -> QueryResult<usize>>,
 }
 
@@ -23,11 +24,21 @@ impl SensorProvider {
 
             insert_sensor : Box::new(move |isensor: InsertableSensor| {
                 use diesel::result::Error;
-                use crate::schema::sensor::dsl::sensor_id;
+                use crate::schema::sensor::dsl::id;
                 let conn = connection_provider();
                 conn.transaction::<_,Error,_>(|| {
                     diesel::insert_into(sensor::table).values(&isensor).execute(&conn)?;
-                    sensor::table.order(sensor_id.desc()).first::<Sensor>(&conn)
+                    sensor::table.order(id.desc()).first::<Sensor>(&conn)
+                })
+            }),
+
+            insert_location : Box::new(move |il: InsertableLocation| {
+                use diesel::result::Error;
+                use crate::schema::location::dsl::id;
+                let conn = connection_provider();
+                conn.transaction::<_,Error,_>(|| {
+                    diesel::insert_into(location::table).values(&il).execute(&conn)?;
+                    location::table.order(id.desc()).first::<Location>(&conn)
                 })
             }),
 
