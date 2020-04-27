@@ -3,6 +3,8 @@
 #[macro_use] extern crate rocket;
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate diesel_migrations;
+#[macro_use] extern crate snafu;
+
 extern crate dotenv;
 
 #[macro_use] extern crate log;
@@ -14,6 +16,7 @@ use rocket::http::RawStr;
 
 use std::{thread};
 
+mod errors;
 mod connection;
 mod event_hub;
 mod schema;
@@ -68,13 +71,15 @@ match frame {
     Frame::DebugFrame(df) => {
         let rdata = lacrosse_v3_protocol::decrypt(df.pulses.as_ref());
         match rdata {
-
+            Err(e) => (),
             Ok(data) => {
                 println!("id:{}, temperature:{}, humidity:{}",data.sensor_id,data.temperature.to_string(),data.humidity.to_string());
                 use sensor::models::*;
-                let state = SensorState::new(data.sensor_id as SensorId ,data.temperature);
+                let state_temp = SensorState::new((data.sensor_id + 10000) as SensorId ,data.temperature);
+                let state_hum = SensorState::new((data.sensor_id + 100000) as SensorId ,data.humidity as f32);
                 let repo = &||sensor::repository::SensorProvider::new(&connection::establish);
-                (repo().insert_sensor_state)(&state).expect("sersor state insertion fail");
+                (repo().insert_sensor_state)(&state_temp).expect("sensor state insertion fail");
+                (repo().insert_sensor_state)(&state_hum).expect("sensor state insertion fail");
         }
             }},
     Frame::RfLinkFrame(_rf) => ()
