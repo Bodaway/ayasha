@@ -61,7 +61,7 @@ fn main() {
     info!("hello world");
 
     rocket::ignite()
-        .mount("/", routes![index, get_sensors_values,covid19_exposed_today,get_all_event,get_no_read_event,set_event_read, create_location])
+        .mount("/", routes![index, get_sensors_values,covid19_exposed_today,get_all_event,get_no_read_event,set_event_read, create_location,get_last_sensor_state])
         .launch();
 }
 
@@ -162,3 +162,16 @@ fn get_no_read_event() -> String {
     serde_json::to_string(&result_table).expect("serialisation fail")
 }
 
+#[get("/getLastSensorState")]
+fn get_last_sensor_state() -> String {
+     use sensor::*;
+
+    let provider_sensor = repository::SensorProvider::new(&connection::establish);
+    let result_table = (provider_sensor.get_last_sensor_state)();
+    match result_table {
+        Err(e) => e.to_string(),
+        Ok(data) => serde_json::to_string(&data).expect("serialisation fail")
+    }
+
+
+}
