@@ -1,4 +1,4 @@
-drop table sensor;
+
 drop table sensor_state;
 
 CREATE TABLE sensor(

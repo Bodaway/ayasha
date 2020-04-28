@@ -16,7 +16,6 @@ use rocket::http::RawStr;
 
 use std::{thread};
 
-mod errors;
 mod connection;
 mod event_hub;
 mod schema;
@@ -71,7 +70,7 @@ match frame {
     Frame::DebugFrame(df) => {
         let rdata = lacrosse_v3_protocol::decrypt(df.pulses.as_ref());
         match rdata {
-            Err(e) => (),
+            Err(e) => warn!("{}",e.to_string()),
             Ok(data) => {
                 println!("id:{}, temperature:{}, humidity:{}",data.sensor_id,data.temperature.to_string(),data.humidity.to_string());
                 use sensor::models::*;
