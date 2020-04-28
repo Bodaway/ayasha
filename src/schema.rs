@@ -38,7 +38,6 @@ table! {
 table! {
     sensor (id) {
         id -> Integer,
-        name -> Text,
         location_id -> Nullable<Integer>,
         sensor_type -> Text,
         unit -> Text,
@@ -52,6 +51,8 @@ table! {
         sensor_value -> Float,
     }
 }
+
+joinable!(sensor_state -> sensor (sensor_id));
 
 allow_tables_to_appear_in_same_query!(
     event,

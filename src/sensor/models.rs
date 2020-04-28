@@ -39,12 +39,11 @@ impl InsertableLocation {
     }
 }
 
-#[derive(Identifiable,Queryable, Associations, PartialEq, Debug)]
-#[belongs_to(Location)] 
+#[derive(Insertable,Queryable, Associations, PartialEq, Debug)]
+#[belongs_to(Location)]
 #[table_name = "sensor"]
 pub struct Sensor {
     pub id: SensorId,
-    pub name : String,
     pub location_id : Option<i32>,
     pub sensor_type : String,
     pub unit : String,
@@ -56,22 +55,9 @@ impl Sensor {
     }
 }
 
-#[derive(Insertable,Debug)]
-#[table_name = "sensor"]
-pub struct InsertableSensor {
-    pub name : String,
-    pub location_id : Option<i32>,
-    pub sensor_type : String,
-    pub unit : String,
-}
 
-impl InsertableSensor {
-    pub fn new(sensor_name : &str, sensor_location : Option<i32>, type_of_sensor : SensorType, sensor_unit : &str) -> InsertableSensor {
-        InsertableSensor {name : sensor_name.to_string(),location_id : sensor_location, sensor_type : type_of_sensor.to_string(),unit : sensor_unit.to_string()}
-    }
-}
-
-#[derive(Insertable,Queryable,Serialize, Deserialize, Debug)]
+#[derive(Insertable,Queryable,QueryableByName,Associations,Serialize, Deserialize, Debug)]
+#[belongs_to(Sensor)]
 #[table_name = "sensor_state"]
 pub struct SensorState {
     pub sensor_id : SensorId,
