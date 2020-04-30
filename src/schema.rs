@@ -45,13 +45,15 @@ table! {
 }
 
 table! {
-    sensor_state (sensor_id, dt_update) {
+    sensor_state (id) {
+        id -> Integer,
         sensor_id -> Integer,
         dt_update -> Timestamp,
         sensor_value -> Float,
     }
 }
 
+joinable!(sensor -> location (location_id));
 joinable!(sensor_state -> sensor (sensor_id));
 
 allow_tables_to_appear_in_same_query!(

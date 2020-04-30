@@ -39,7 +39,7 @@ impl InsertableLocation {
     }
 }
 
-#[derive(Insertable,Queryable, Associations, PartialEq, Debug)]
+#[derive(Identifiable,Insertable,Queryable,Associations, PartialEq, Debug)]
 #[belongs_to(Location)]
 #[table_name = "sensor"]
 pub struct Sensor {
@@ -50,23 +50,31 @@ pub struct Sensor {
 }
 
 impl Sensor {
-    pub fn create_state(&self, value : f32) -> SensorState {
-        SensorState::new(self.id,value)
+    pub fn create_state(&self, value : f32) -> InsertableSensorState {
+        InsertableSensorState::new(self.id,value)
     }
 }
-
-
-#[derive(Insertable,Queryable,QueryableByName,Associations,Serialize, Deserialize, Debug)]
+#[derive(Identifiable,Queryable,QueryableByName,Associations,Serialize, Deserialize, PartialEq, Debug)]
 #[belongs_to(Sensor)]
 #[table_name = "sensor_state"]
 pub struct SensorState {
+    pub id : i32,
     pub sensor_id : SensorId,
     pub dt_update: NaiveDateTime,
     pub sensor_value: f32,
 }
 
-impl SensorState {
-    pub fn new(id_of_sensor : SensorId, value : f32) -> SensorState {
-        SensorState{sensor_id : id_of_sensor, sensor_value : value, dt_update : chrono::Local::now().naive_local() }
+#[derive(Insertable,Queryable,QueryableByName,Associations,Debug)]
+#[belongs_to(Sensor)]
+#[table_name = "sensor_state"]
+pub struct InsertableSensorState {
+    pub sensor_id : SensorId,
+    pub dt_update: NaiveDateTime,
+    pub sensor_value: f32,
+}
+
+impl InsertableSensorState {
+    pub fn new(id_of_sensor : SensorId, value : f32) -> InsertableSensorState {
+        InsertableSensorState{sensor_id : id_of_sensor, sensor_value : value, dt_update : chrono::Local::now().naive_local() }
     }
 }

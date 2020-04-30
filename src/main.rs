@@ -74,8 +74,8 @@ match frame {
             Ok(data) => {
                 println!("id:{}, temperature:{}, humidity:{}",data.sensor_id,data.temperature.to_string(),data.humidity.to_string());
                 use sensor::models::*;
-                let state_temp = SensorState::new((data.sensor_id + 10000) as SensorId ,data.temperature);
-                let state_hum = SensorState::new((data.sensor_id + 100000) as SensorId ,data.humidity as f32);
+                let state_temp = InsertableSensorState::new((data.sensor_id + 10000) as SensorId ,data.temperature);
+                let state_hum = InsertableSensorState::new((data.sensor_id + 100000) as SensorId ,data.humidity as f32);
                 let repo = &||sensor::repository::SensorProvider::new(&connection::establish);
                 (repo().insert_sensor_state)(&state_temp).expect("sensor state insertion fail");
                 (repo().insert_sensor_state)(&state_hum).expect("sensor state insertion fail");
