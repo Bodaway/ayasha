@@ -172,6 +172,20 @@ fn get_last_sensor_state() -> String {
         Err(e) => e.to_string(),
         Ok(data) => serde_json::to_string(&data).expect("serialisation fail")
     }
+}
 
+#[get("/getLocationStatus")]
+    fn get_location_status() -> String {
+use sensor::*;
+use sensor::hl_models::*;
 
+    let provider_sensor = repository::SensorProvider::new(&connection::establish);
+    let result_table = (provider_sensor.get_all_location_status)();
+    match result_table {
+        Err(e) => e.to_string(),
+        Ok(data) => {
+            let locations = LocationStatus::get_all_status(data) ;
+            serde_json::to_string(&locations).expect("serialisation fail")
+        }
+    }
 }

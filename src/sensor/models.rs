@@ -20,7 +20,7 @@ impl Display for SensorType {
     } 
 }
 
-#[derive(Identifiable,Queryable, Associations, PartialEq, Debug)]
+#[derive(Identifiable,Queryable, Associations, Serialize, Deserialize,PartialEq, Debug)]
 #[table_name = "location"]
 pub struct Location {
     pub id : i32,
@@ -39,7 +39,7 @@ impl InsertableLocation {
     }
 }
 
-#[derive(Identifiable,Insertable,Queryable,Associations, PartialEq, Debug)]
+#[derive(Identifiable,Insertable,Queryable,Associations, Serialize, Deserialize,PartialEq, Debug)]
 #[belongs_to(Location)]
 #[table_name = "sensor"]
 pub struct Sensor {
@@ -47,6 +47,7 @@ pub struct Sensor {
     pub location_id : Option<i32>,
     pub sensor_type : String,
     pub unit : String,
+    pub is_active : bool
 }
 
 impl Sensor {

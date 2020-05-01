@@ -5,7 +5,8 @@ CREATE TABLE sensor(
     id INTEGER PRIMARY KEY not null,
     location_id integer references location(id),
     sensor_type text not null,
-    unit text not null);
+    unit text not null,
+    is_active boolean not null);
     
 CREATE TABLE sensor_state(
 	id INTEGER PRIMARY KEY not null,

@@ -41,6 +41,7 @@ table! {
         location_id -> Nullable<Integer>,
         sensor_type -> Text,
         unit -> Text,
+        is_active -> Bool,
     }
 }
 

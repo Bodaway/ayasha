@@ -1,5 +1,5 @@
 
-
+/*
 
 
 #[cfg(test)]
@@ -80,4 +80,4 @@ use std::{thread, time};
         assert_eq!(all_sensor_state[0].sensor_id,all_sensor[0].sensor_id);
         assert_eq!(all_sensor_state[0].sensor_value,25.0);
     }
-}
+} */
