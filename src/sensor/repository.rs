@@ -9,6 +9,7 @@ pub struct SensorProvider {
     pub get_last_sensor_state: Box<dyn Fn() -> QueryResult<Vec<SensorState>>>,
     pub get_all_sensor: Box<dyn Fn() -> QueryResult<Vec<Sensor>>>,
     pub insert_sensor: Box<dyn Fn(&Sensor) -> QueryResult<usize>>,
+    pub update_sensor_location: Box<dyn Fn(SensorId, LocationId) -> QueryResult<usize>>,
     pub insert_location: Box<dyn Fn(InsertableLocation) -> QueryResult<Location>>,
     pub insert_sensor_state: Box<dyn Fn(&InsertableSensorState) -> QueryResult<usize>>,
     pub get_all_location_status:
@@ -44,6 +45,13 @@ impl SensorProvider {
                     .execute(&connection_provider())
             }),
 
+            update_sensor_location: Box::new(move |sid: SensorId, lid: LocationId| {
+                use crate::schema::sensor::id;
+                use crate::schema::sensor::location_id;
+                diesel::update(sensor::table.filter(id.eq(sid)))
+                    .set(location_id.eq(lid))
+                    .execute(&connection_provider())
+            }),
             insert_location: Box::new(move |il: InsertableLocation| {
                 use crate::schema::location::dsl::id;
                 use diesel::result::Error;
@@ -66,8 +74,7 @@ impl SensorProvider {
                 let conn = connection_provider();
                 let locs = location::table.load::<Location>(&conn)?;
                 let sensors = Sensor::belonging_to(&locs).load::<Sensor>(&conn)?;
-                let states = SensorState::belonging_to(&sensors)
-                    .load::<SensorState>(&conn)?;
+                let states = SensorState::belonging_to(&sensors).load::<SensorState>(&conn)?;
 
                 let gp_states = states.grouped_by(&sensors);
                 let sensors_st = sensors.into_iter().zip(gp_states).grouped_by(&locs);
