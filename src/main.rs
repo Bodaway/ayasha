@@ -28,6 +28,7 @@ mod schema;
 mod sensor;
 mod serial_com;
 mod traitement_recurent;
+mod frame_process;
 
 use serial_com::models::*;
 
@@ -57,8 +58,10 @@ fn main() {
     });
 
     use serial_com::*;
+    use sensor::repository::SensorProvider;
     thread::spawn(move || {
-        start_listen(Box::new(frame_received));
+        let on_frame_receive = |f: Frame| frame_process::frame_received(f,&|| SensorProvider::new(&connection::establish));
+        start_listen(Box::new(on_frame_receive));
     });
 
     info!("hello world");
@@ -80,38 +83,6 @@ fn main() {
             ],
         )
         .launch();
-}
-
-fn frame_received(frame: serial_com::models::Frame) {
-    match frame {
-        Frame::DebugFrame(df) => {
-            let rdata = lacrosse_v3_protocol::decrypt(df.pulses.as_ref());
-            match rdata {
-                Err(e) => warn!("{}", e.to_string()),
-                Ok(data) => {
-                    println!(
-                        "id:{}, temperature:{}, humidity:{}",
-                        data.sensor_id,
-                        data.temperature.to_string(),
-                        data.humidity.to_string()
-                    );
-                    use sensor::models::*;
-                    let state_temp = InsertableSensorState::new(
-                        (data.sensor_id + 10000) as SensorId,
-                        data.temperature,
-                    );
-                    let state_hum = InsertableSensorState::new(
-                        (data.sensor_id + 100000) as SensorId,
-                        data.humidity as f32,
-                    );
-                    let repo = &|| sensor::repository::SensorProvider::new(&connection::establish);
-                    (repo().insert_sensor_state)(&state_temp).expect("sensor state insertion fail");
-                    (repo().insert_sensor_state)(&state_hum).expect("sensor state insertion fail");
-                }
-            }
-        }
-        Frame::RfLinkFrame(_rf) => (),
-    }
 }
 
 // ROCKET

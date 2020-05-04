@@ -11,6 +11,7 @@ pub type StateId = i32;
 pub enum SensorType {
     Temperature,
     PressionAtmos,
+    Humidity,
 }
 
 impl Display for SensorType {
@@ -18,6 +19,7 @@ impl Display for SensorType {
         match self {
             SensorType::Temperature => write!(f, "Temperature"),
             SensorType::PressionAtmos => write!(f, "PressionAtmos"),
+            SensorType::Humidity => write!(f, "Humidity"),
         }
     }
 }
@@ -59,6 +61,10 @@ pub struct Sensor {
 impl Sensor {
     pub fn create_state(&self, value: f32) -> InsertableSensorState {
         InsertableSensorState::new(self.id, value)
+    }
+    pub fn new(id:SensorId, s_type : SensorType, s_unit :String) -> Sensor {
+        
+        Sensor{ id : id ,location_id : None, sensor_type : s_type.to_string(), unit: s_unit, is_active : true }
     }
 }
 #[derive(
