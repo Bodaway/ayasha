@@ -5,15 +5,13 @@ use snafu::{ResultExt, Snafu};
 
 #[derive(Debug, Snafu)]
 pub enum Error {
-    #[snafu(display("database access error for {}", description))]
+    #[snafu(display("database access error : {}", source.to_string()))]
     DatabaseAccessError {
-        description: String,
         source: diesel::result::Error,
     },
 
-    #[snafu(display("decrypt error for protocol {}", protocol))]
-    DecryptError {
-        protocol: String,
+    #[snafu(display("error for protocol lacrosse : {}", source.to_string()))]
+    LacrosseError {
         source: lacrosse_v3_protocol::LacrosseError,
     },
 
@@ -24,16 +22,17 @@ type Result<T, E = Error> = std::result::Result<T, E>;
 
 type Provider = &'static dyn Fn() -> SensorProvider;
 
-pub fn frame_received(frame: Frame, provider_of_sensor: Provider) {
+pub fn frame_received(frame: Frame, provider_of_sensor: Provider) -> Result<()> {
     match frame {
         Frame::DebugFrame(df) => debug_case(df, provider_of_sensor),
         Frame::RfLinkFrame(_rf) => Err(Error::NotImplementedError),
-    };
+    }
 }
 
 fn debug_case(df: DebugFrame, prov: Provider) -> Result<()> {
-    let data = lacrosse_v3_protocol::decrypt(df.pulses.as_ref()).context(DecryptError{protocol: "lacrosse_v3_protocol"})?;
-    println!(
+    debug!("enter to debug case frame");
+    let data = lacrosse_v3_protocol::decrypt(df.pulses.as_ref()).context(LacrosseError)?;
+    debug!(
         "id:{}, temperature:{}, humidity:{}",
         data.sensor_id,
         data.temperature.to_string(),
@@ -48,19 +47,17 @@ fn debug_case(df: DebugFrame, prov: Provider) -> Result<()> {
     let repo = prov();
 
     if !(sensor_exist(id_temp, prov)?) {
-       Sensor::new(id_temp,SensorType::Temperature,"Celcius".into()); 
+       let s_temp = Sensor::new(id_temp,SensorType::Temperature,"Celcius".into()); 
+       (repo.insert_sensor)(&s_temp).context(DatabaseAccessError)?;
     }
 
     if !(sensor_exist(id_hum, prov)?) {
-       Sensor::new(id_hum,SensorType::Humidity,"%".into()); 
+       let s_hum = Sensor::new(id_hum,SensorType::Humidity,"%".into()); 
+       (repo.insert_sensor)(&s_hum).context(DatabaseAccessError)?;
     }
 
-    (repo.insert_sensor_state)(&state_temp).context(DatabaseAccessError {
-        description: "method insert_sensor_state as fail",
-    })?;
-    (repo.insert_sensor_state)(&state_hum).context(DatabaseAccessError {
-        description: "method insert_sensor_state as fail",
-    })?;
+    (repo.insert_sensor_state)(&state_temp).context(DatabaseAccessError)?;
+    (repo.insert_sensor_state)(&state_hum).context(DatabaseAccessError)?;
 
 
     Ok(())
@@ -68,9 +65,7 @@ fn debug_case(df: DebugFrame, prov: Provider) -> Result<()> {
 
 fn sensor_exist(id: SensorId, prov: Provider) -> Result<bool> {
     let prov = prov();
-    let sensors = (prov.get_all_sensor)().context(DatabaseAccessError {
-        description: "method get_all_sensor as fail",
-    })?;
+    let sensors = (prov.get_all_sensor)().context(DatabaseAccessError)?;
 
     let exist = sensors.into_iter().find(|s| s.id == id).is_some();
     Ok(exist)

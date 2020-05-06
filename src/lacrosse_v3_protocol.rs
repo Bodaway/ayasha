@@ -22,7 +22,7 @@ pub fn decrypt(raw_data : &str) -> Result<LaCrosseData> {
 
    let tuple_pulse = to_tuple_pulse(&signal)?;
    let binary_signal = binarize(tuple_pulse);
-
+    //debug!("signal : {}", binary_signal);
    let binary_frames = binary_signal.split("hhhh").into_iter().filter(|x| x.len() == 41).collect::<Vec<&str>>();
    if binary_frames.len() == 0 {
        return Err(LacrosseError::NoValidFrame);
@@ -65,7 +65,7 @@ fn to_tuple_pulse(signal : &Vec<&str>) -> Result<Vec<(i32,i32)>> {
 
 fn binarize(tuple_signal : Vec<(i32,i32)> ) -> String {
     tuple_signal.into_iter().map(|t| match t {
-        (x,y) if x > 450 && y > 450 => "Ph",
+        (x,y) if x > 450 && y > 450 => "h",
         (x,y) if x > y => "0",
         _ => "1"
     }).collect::<Vec<&str>>().concat()

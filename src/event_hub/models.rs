@@ -11,17 +11,19 @@ pub enum EventType {
     OpenWindows,
     Covid19ExposedToday,
     Covid19withoutExposure,
+    NewSensor,
 }
 
 impl EventType {
-    pub fn from_string(input : &str) -> EventType {
+    pub fn from_string(input: &str) -> EventType {
         match input {
-            "LowBattery" => EventType::LowBattery ,
-            "LostSignal" => EventType::LostSignal ,
-            "OpenWindows" => EventType::OpenWindows ,
-            "Covid19ExposedToday" => EventType::Covid19ExposedToday ,
-            "Covid19withoutExposure" => EventType::Covid19withoutExposure ,
-            _ => panic!("convert impossible")
+            "LowBattery" => EventType::LowBattery,
+            "LostSignal" => EventType::LostSignal,
+            "OpenWindows" => EventType::OpenWindows,
+            "Covid19ExposedToday" => EventType::Covid19ExposedToday,
+            "Covid19withoutExposure" => EventType::Covid19withoutExposure,
+            "NewSensor" => EventType::NewSensor,
+            _ => panic!("convert impossible"),
         }
     }
 }
@@ -34,6 +36,7 @@ impl Display for EventType {
             EventType::OpenWindows => write!(f, "OpenWindows"),
             EventType::Covid19ExposedToday => write!(f, "Covid19ExposedToday"),
             EventType::Covid19withoutExposure => write!(f, "Covid19withoutExposure"),
+            EventType::NewSensor => write!(f, "NewSensor"),
         }
     }
 }
@@ -47,21 +50,43 @@ pub struct Event {
     pub event_value: Option<String>,
     pub event_value_definition: Option<String>,
     pub dt_occurs: chrono::NaiveDateTime,
-    pub read_flag : bool
+    pub read_flag: bool,
 }
 
 impl Event {
-    pub fn get_notification_data(&self) -> (String,String) {
+    pub fn get_notification_data(&self) -> (String, String) {
+        let get_source_id = || self.sensor_source_id.as_ref().unwrap_or(&-1);
         match EventType::from_string(&self.event_type) {
-            EventType::LowBattery => ("pile faible".to_string(),format!("capteur {} signal des pile faible.", self.sensor_source_id.as_ref().unwrap_or(&-1) )),
-            EventType::LostSignal => ("".to_string(),"".to_string()),
-            EventType::OpenWindows => ("Ouvrir les fênetres".to_string(),"penser à ouvrir les fenetres !".to_string()),
-            EventType::Covid19ExposedToday => ("COVID-19".to_string(),"Il y a eu exposition aujourd'hui".to_string()),
-            EventType::Covid19withoutExposure => ("COVID-19".to_string(),format!("pas d'exposition depuis {} jours", self.event_value.as_ref().unwrap_or(&String::from("-1")))),
+            EventType::LowBattery => (
+                "pile faible".to_string(),
+                format!("capteur {} signal des pile faible.", get_source_id()),
+            ),
+            EventType::LostSignal => (
+                "signal perdu".into(),
+                format!("le capteur {} n'émet plus", get_source_id()),
+            ),
+            EventType::OpenWindows => (
+                "Ouvrir les fênetres".to_string(),
+                "penser à ouvrir les fenetres !".to_string(),
+            ),
+            EventType::Covid19ExposedToday => (
+                "COVID-19".to_string(),
+                "Il y a eu exposition aujourd'hui".to_string(),
+            ),
+            EventType::Covid19withoutExposure => (
+                "COVID-19".to_string(),
+                format!(
+                    "pas d'exposition depuis {} jours",
+                    self.event_value.as_ref().unwrap_or(&String::from("-1"))
+                ),
+            ),
+            EventType::NewSensor => (
+                "Nouveau capteur".into(),
+                format!("id du capteur {}", get_source_id()),
+            ),
         }
     }
 }
-
 
 #[derive(Insertable)]
 #[table_name = "event"]
@@ -72,7 +97,7 @@ pub struct InsertableEvent {
     pub event_value: Option<String>,
     pub event_value_definition: Option<String>,
     pub dt_occurs: chrono::NaiveDateTime,
-    pub read_flag : bool
+    pub read_flag: bool,
 }
 
 impl InsertableEvent {
@@ -81,8 +106,8 @@ impl InsertableEvent {
         rules_source_name: String,
         source_id: Option<SensorId>,
         value_of_event: Option<String>,
-        value_definition: Option<String>    ) -> InsertableEvent {
-
+        value_definition: Option<String>,
+    ) -> InsertableEvent {
         InsertableEvent {
             event_type: type_of_event.to_string(),
             sensor_source_id: source_id,
@@ -90,7 +115,7 @@ impl InsertableEvent {
             dt_occurs: Local::now().naive_local(),
             event_value: value_of_event,
             event_value_definition: value_definition,
-            read_flag: false
+            read_flag: false,
         }
     }
 }

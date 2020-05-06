@@ -6,7 +6,6 @@ extern crate rocket;
 extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
-#[macro_use]
 extern crate snafu;
 
 extern crate dotenv;
@@ -58,9 +57,14 @@ fn main() {
     });
 
     use serial_com::*;
-    use sensor::repository::SensorProvider;
     thread::spawn(move || {
-        let on_frame_receive = |f: Frame| frame_process::frame_received(f,&|| SensorProvider::new(&connection::establish));
+        let on_frame_receive = |f: Frame| {
+            let result = frame_process::frame_received(f,&|| sensor::repository::SensorProvider::new(&connection::establish));
+            match result {
+                Err(ex) => error!("{}",ex.to_string()),
+                _ => ()
+            };
+        };
         start_listen(Box::new(on_frame_receive));
     });
 
@@ -83,6 +87,7 @@ fn main() {
             ],
         )
         .launch();
+
 }
 
 // ROCKET
@@ -175,16 +180,17 @@ use crate::sensor::models::*;
 
 #[put("/createLocation/<name>")]
 fn create_location(name: &RawStr) {
-    use crate::sensor::repository::*;
+    use sensor::*;
 
-    let get_repo = &|| SensorProvider::new(&connection::establish);
+    let get_repo = &|| repository::SensorProvider::new(&connection::establish);
     let iloca = InsertableLocation::new(name.as_str());
     (get_repo().insert_location)(iloca).expect("location insertion fail");
 }
 
 #[put("/assignSensor/<sensor_id>/<location_id>")]
 fn assign_sensor(sensor_id : SensorId, location_id : LocationId){
- let get_repo = &|| SensorProvider::new(&connection::establish);
+    use sensor::*;
+ let get_repo = &||repository::SensorProvider::new(&connection::establish);
     (get_repo().update_sensor_location)(sensor_id,location_id).expect("location insertion fail");
 
 }
@@ -203,4 +209,5 @@ fn get_location_status() -> String {
             serde_json::to_string(&locations).expect("serialisation fail")
         }
     }
-}
+} 
+

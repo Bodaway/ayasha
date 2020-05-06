@@ -19,7 +19,7 @@ pub fn start_listen(on_frame_receive : Box<dyn Fn(Frame)>) {
         let result = listen(&on_frame_receive);
         match result {
             Ok(_x) => (),
-            Err(e) => thread::sleep(Duration::from_secs(9600))// debug!("serial com error {}", e )
+            Err(e) => debug!("serial com error {}", e )
         }
     }
 }
