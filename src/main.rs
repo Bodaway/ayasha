@@ -13,6 +13,8 @@ extern crate dotenv;
 #[macro_use]
 extern crate log;
 extern crate syslog;
+#[macro_use]
+extern crate lazy_static;
 
 use log::LevelFilter; //SetLoggerError
 use rocket::http::RawStr;
@@ -30,6 +32,7 @@ mod traitement_recurent;
 mod frame_process;
 
 use serial_com::models::*;
+use crate::connection::*;
 
 embed_migrations!("./migrations");
 
@@ -46,7 +49,7 @@ fn main() {
         .map(|()| log::set_max_level(LevelFilter::Debug))
         .expect("unable to box logger");
 
-    let connection = connection::establish();
+    let connection = DB_POOL.get().unwrap();
     embedded_migrations::run_with_output(&connection, &mut std::io::stdout())
         .expect("diesel migration fail");
 
@@ -59,7 +62,7 @@ fn main() {
     use serial_com::*;
     thread::spawn(move || {
         let on_frame_receive = |f: Frame| {
-            let result = frame_process::frame_received(f,&|| sensor::repository::SensorProvider::new(&connection::establish));
+            let result = frame_process::frame_received(f,&|| sensor::repository::SensorProvider::new());
             match result {
                 Err(ex) => error!("{}",ex.to_string()),
                 _ => ()
@@ -104,7 +107,7 @@ fn set_event_read(id: &RawStr) {
     use crate::event_hub::models::*;
     use crate::event_hub::repository::*;
     use crate::event_hub::*;
-    let get_repo = &|| EventProvider::new(&connection::establish);
+    let get_repo = &|| EventProvider::new();
 
     (get_repo().set_event_to_read)(&id_int).expect("set_event_read update fail");
 }
@@ -114,7 +117,7 @@ fn covid19_exposed_today() {
     use crate::event_hub::models::*;
     use crate::event_hub::repository::*;
     use crate::event_hub::*;
-    let get_repo = &|| EventProvider::new(&connection::establish);
+    let get_repo = &|| EventProvider::new();
 
     let iev = InsertableEvent::new(
         EventType::Covid19ExposedToday,
@@ -136,7 +139,7 @@ fn covid19_exposed_today() {
 fn get_sensors_values() -> String {
     use sensor::*;
 
-    let provider_sensor = repository::SensorProvider::new(&connection::establish);
+    let provider_sensor = repository::SensorProvider::new();
     let result_table = (provider_sensor.get_all_sensor_state)().expect("Fuck dont work");
 
     serde_json::to_string(&result_table).expect("serialisation fail")
@@ -148,7 +151,7 @@ fn get_sensors_values() -> String {
 fn get_all_event() -> String {
     use event_hub::*;
 
-    let provider_event = repository::EventProvider::new(&connection::establish);
+    let provider_event = repository::EventProvider::new();
     let result_table = (provider_event.get_all_event)().expect("Fuck dont work");
 
     serde_json::to_string(&result_table).expect("serialisation fail")
@@ -158,7 +161,7 @@ fn get_all_event() -> String {
 fn get_no_read_event() -> String {
     use event_hub::*;
 
-    let provider_event = repository::EventProvider::new(&connection::establish);
+    let provider_event = repository::EventProvider::new();
     let result_table = (provider_event.get_event_no_read)().expect("Fuck dont work");
 
     serde_json::to_string(&result_table).expect("serialisation fail")
@@ -168,7 +171,7 @@ fn get_no_read_event() -> String {
 fn get_last_sensor_state() -> String {
     use sensor::*;
 
-    let provider_sensor = repository::SensorProvider::new(&connection::establish);
+    let provider_sensor = repository::SensorProvider::new();
     let result_table = (provider_sensor.get_last_sensor_state)();
     match result_table {
         Err(e) => e.to_string(),
@@ -182,7 +185,7 @@ use crate::sensor::models::*;
 fn create_location(name: &RawStr) {
     use sensor::*;
 
-    let get_repo = &|| repository::SensorProvider::new(&connection::establish);
+    let get_repo = &|| repository::SensorProvider::new();
     let iloca = InsertableLocation::new(name.as_str());
     (get_repo().insert_location)(iloca).expect("location insertion fail");
 }
@@ -190,7 +193,7 @@ fn create_location(name: &RawStr) {
 #[put("/assignSensor/<sensor_id>/<location_id>")]
 fn assign_sensor(sensor_id : SensorId, location_id : LocationId){
     use sensor::*;
- let get_repo = &||repository::SensorProvider::new(&connection::establish);
+ let get_repo = &||repository::SensorProvider::new();
     (get_repo().update_sensor_location)(sensor_id,location_id).expect("location insertion fail");
 
 }
@@ -200,7 +203,7 @@ fn get_location_status() -> String {
     use sensor::hl_models::*;
     use sensor::*;
 
-    let provider_sensor = repository::SensorProvider::new(&connection::establish);
+    let provider_sensor = repository::SensorProvider::new();
     let result_table = (provider_sensor.get_all_location_status)();
     match result_table {
         Err(e) => e.to_string(),

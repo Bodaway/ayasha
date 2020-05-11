@@ -46,7 +46,7 @@ pub fn listen(on_data_receive: &dyn Fn(Frame)) -> io::Result<()> {
     loop{
         let frame = read_line(port)?;
 
-        let get_repo = &||FrameProvider::new(&establish); 
+        let get_repo = &||FrameProvider::new(); 
         let irf = frame.to_raw_frame_info();
         (get_repo().insert_frame)(&irf).expect("raw frame insertion fail");
 

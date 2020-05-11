@@ -15,7 +15,7 @@ pub fn traitement_recurent() {
         use crate::event_hub::models::*;
         use crate::event_hub::repository::*;
         use crate::event_hub::*;
-        let get_repo = &||EventProvider::new(&connection::establish);
+        let get_repo = &||EventProvider::new();
 
         let rules_result = execute_rules(&get_rules(get_repo));
 

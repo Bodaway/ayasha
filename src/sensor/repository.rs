@@ -1,6 +1,7 @@
 use crate::schema::*;
 use diesel;
 use diesel::prelude::*;
+use crate::connection::*;
 
 use crate::sensor::models::*;
 
@@ -17,10 +18,10 @@ pub struct SensorProvider {
 }
 
 impl SensorProvider {
-    pub fn new(connection_provider: &'static dyn Fn() -> SqliteConnection) -> SensorProvider {
+    pub fn new() -> SensorProvider {
         SensorProvider {
             get_all_sensor_state: Box::new(move || {
-                sensor_state::table.load::<SensorState>(&(connection_provider()))
+                sensor_state::table.load::<SensorState>(&DB_POOL.get().unwrap())
             }),
 
             get_last_sensor_state: Box::new(move || {
@@ -32,17 +33,17 @@ impl SensorProvider {
 	                        order by dt_update desc
                             ) a group by sensor_id;",
                 )
-                .load::<SensorState>(&(connection_provider()))
+                .load::<SensorState>(&DB_POOL.get().unwrap())
             }),
 
             get_all_sensor: Box::new(move || {
-                sensor::table.load::<Sensor>(&(connection_provider()))
+                sensor::table.load::<Sensor>(&DB_POOL.get().unwrap())
             }),
 
             insert_sensor: Box::new(move |isensor: &Sensor| {
                 diesel::insert_into(sensor::table)
                     .values(isensor)
-                    .execute(&connection_provider())
+                    .execute(&DB_POOL.get().unwrap())
             }),
 
             update_sensor_location: Box::new(move |sid: SensorId, lid: LocationId| {
@@ -50,31 +51,31 @@ impl SensorProvider {
                 use crate::schema::sensor::location_id;
                 diesel::update(sensor::table.filter(id.eq(sid)))
                     .set(location_id.eq(lid))
-                    .execute(&connection_provider())
+                    .execute(&DB_POOL.get().unwrap())
             }),
             insert_location: Box::new(move |il: InsertableLocation| {
                 use crate::schema::location::dsl::id;
                 use diesel::result::Error;
-                let conn = connection_provider();
+                let conn = &DB_POOL.get().unwrap();
                 conn.transaction::<_, Error, _>(|| {
                     diesel::insert_into(location::table)
                         .values(&il)
-                        .execute(&conn)?;
-                    location::table.order(id.desc()).first::<Location>(&conn)
+                        .execute(conn)?;
+                    location::table.order(id.desc()).first::<Location>(conn)
                 })
             }),
 
             insert_sensor_state: Box::new(move |ss: &InsertableSensorState| {
                 diesel::insert_into(sensor_state::table)
                     .values(ss)
-                    .execute(&connection_provider())
+                    .execute(&DB_POOL.get().unwrap())
             }),
 
             get_all_location_status: Box::new(move || {
-                let conn = connection_provider();
-                let locs = location::table.load::<Location>(&conn)?;
-                let sensors = Sensor::belonging_to(&locs).load::<Sensor>(&conn)?;
-                let states = SensorState::belonging_to(&sensors).load::<SensorState>(&conn)?;
+                let conn = &DB_POOL.get().unwrap();
+                let locs = location::table.load::<Location>(conn)?;
+                let sensors = Sensor::belonging_to(&locs).load::<Sensor>(conn)?;
+                let states = SensorState::belonging_to(&sensors).load::<SensorState>(conn)?;
 
                 let gp_states = states.grouped_by(&sensors);
                 let sensors_st = sensors.into_iter().zip(gp_states).grouped_by(&locs);

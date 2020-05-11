@@ -11,7 +11,7 @@ rocket = "*"
 serde = { version = "*", features = ["derive"] }
 serde_json = "*"
 libsqlite3-sys = { version = "*", features = ["bundled"] }
-diesel = { version = "*", features = ["sqlite","chrono"] }
+diesel = { version = "*", features = ["sqlite","chrono","r2d2"] }
 diesel-derive-enum = { version = "*", features = ["sqlite"] }
 diesel_migrations = "*"
 dotenv = "*"
@@ -21,3 +21,5 @@ syslog = "*"
 serial = "*"
 azure_notificationhub_sender = { git = "https://github.com/Bodaway/azure_notificationhub_sender.git"}
 snafu = "*"
+r2d2 = "*"
+lazy_static ="*"

@@ -28,7 +28,7 @@ pub fn decrypt(raw_data : &str) -> Result<LaCrosseData> {
        return Err(LacrosseError::NoValidFrame);
    }
    if binary_frames.len() != 4 {warn!(" {} frames trouver au lieu des 4 prévu",binary_frames.len())}
-   if binary_frames[0].len() != binary_frames[1].len() { }
+   //if binary_frames[0].len() != binary_frames[1].len() { }
 
     let w_frame = binary_frames[0];
 
