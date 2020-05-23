@@ -21,10 +21,16 @@ impl SensorProvider {
     pub fn new() -> SensorProvider {
         SensorProvider {
             get_all_sensor_state: Box::new(move || {
-                sensor_state::table.load::<SensorState>(&DB_POOL.get().unwrap())
+                let locker = DB_POOL.clone();
+                let pool = locker.lock().unwrap();
+                let conn = pool.get().unwrap();
+                sensor_state::table.load::<SensorState>(&conn)
             }),
 
             get_last_sensor_state: Box::new(move || {
+                let locker = DB_POOL.clone();
+                let pool = locker.lock().unwrap();
+                let conn = pool.get().unwrap();
                 diesel::dsl::sql_query(
                     "select * from 
                             (
@@ -33,30 +39,42 @@ impl SensorProvider {
 	                        order by dt_update desc
                             ) a group by sensor_id;",
                 )
-                .load::<SensorState>(&DB_POOL.get().unwrap())
+                .load::<SensorState>(&conn)
             }),
 
             get_all_sensor: Box::new(move || {
-                sensor::table.load::<Sensor>(&DB_POOL.get().unwrap())
+                let locker = DB_POOL.clone();
+                let pool = locker.lock().unwrap();
+                let conn = pool.get().unwrap();
+                sensor::table.load::<Sensor>(&conn)
             }),
 
             insert_sensor: Box::new(move |isensor: &Sensor| {
+                let locker = DB_POOL.clone();
+                let pool = locker.lock().unwrap();
+                let conn = pool.get().unwrap();
                 diesel::insert_into(sensor::table)
                     .values(isensor)
-                    .execute(&DB_POOL.get().unwrap())
+                    .execute(&conn)
             }),
 
             update_sensor_location: Box::new(move |sid: SensorId, lid: LocationId| {
+                let locker = DB_POOL.clone();
+                let pool = locker.lock().unwrap();
+                let conn = pool.get().unwrap();
                 use crate::schema::sensor::id;
                 use crate::schema::sensor::location_id;
                 diesel::update(sensor::table.filter(id.eq(sid)))
                     .set(location_id.eq(lid))
-                    .execute(&DB_POOL.get().unwrap())
+                    .execute(&conn)
             }),
             insert_location: Box::new(move |il: InsertableLocation| {
+                let locker = DB_POOL.clone();
+                let pool = locker.lock().unwrap();
+                let conn = pool.get().unwrap();
                 use crate::schema::location::dsl::id;
                 use diesel::result::Error;
-                let conn = &DB_POOL.get().unwrap();
+                let conn = &conn;
                 conn.transaction::<_, Error, _>(|| {
                     diesel::insert_into(location::table)
                         .values(&il)
@@ -66,13 +84,19 @@ impl SensorProvider {
             }),
 
             insert_sensor_state: Box::new(move |ss: &InsertableSensorState| {
+                let locker = DB_POOL.clone();
+                let pool = locker.lock().unwrap();
+                let conn = pool.get().unwrap();
                 diesel::insert_into(sensor_state::table)
                     .values(ss)
-                    .execute(&DB_POOL.get().unwrap())
+                    .execute(&conn)
             }),
 
             get_all_location_status: Box::new(move || {
-                let conn = &DB_POOL.get().unwrap();
+                let locker = DB_POOL.clone();
+                let pool = locker.lock().unwrap();
+                let conn = pool.get().unwrap();
+                let conn = &conn;
                 let locs = location::table.load::<Location>(conn)?;
                 let sensors = Sensor::belonging_to(&locs).load::<Sensor>(conn)?;
                 let states = SensorState::belonging_to(&sensors).load::<SensorState>(conn)?;

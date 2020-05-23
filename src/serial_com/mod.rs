@@ -48,7 +48,7 @@ pub fn listen(on_data_receive: &dyn Fn(Frame)) -> io::Result<()> {
 
         let get_repo = &||FrameProvider::new(); 
         let irf = frame.to_raw_frame_info();
-        (get_repo().insert_frame)(&irf).expect("raw frame insertion fail");
+       // (get_repo().insert_frame)(&irf).expect("raw frame insertion fail");
 
         let frame_result = match frame.is_debug() {
                                 true =>{

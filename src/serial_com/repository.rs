@@ -11,7 +11,10 @@ impl FrameProvider {
     pub fn new() ->  FrameProvider {
         FrameProvider{
             insert_frame : Box::new(move |irf: &InsertableRawFrameInfo| {
-                diesel::insert_into(raw_frame_info::table).values(irf).execute(&DB_POOL.get().unwrap())
+                let locker = DB_POOL.clone();
+                let pool = locker.lock().unwrap();
+                let conn = pool.get().unwrap();
+                diesel::insert_into(raw_frame_info::table).values(irf).execute(&conn)
                 })
         }
     }

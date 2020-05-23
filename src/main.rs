@@ -48,11 +48,13 @@ fn main() {
     log::set_boxed_logger(Box::new(BasicLogger::new(logger)))
         .map(|()| log::set_max_level(LevelFilter::Debug))
         .expect("unable to box logger");
-
-    let connection = DB_POOL.get().unwrap();
+{
+        let locker = DB_POOL.clone();
+        let pool = locker.lock().unwrap();
+        let connection = pool.get().unwrap();
     embedded_migrations::run_with_output(&connection, &mut std::io::stdout())
         .expect("diesel migration fail");
-
+}
     use traitement_recurent::*;
 
     thread::spawn(move || {
